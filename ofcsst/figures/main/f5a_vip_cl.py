@@ -314,15 +314,6 @@ def plot(save: bool = True):
     helper.adjust_figure(fig=fig, hspace=0.5, wspace=0)
     fig.subplots_adjust(left=0.13, bottom=0.15, top=0.92)
     helper.set_panel_label(label="a", fig=fig)
-    _, fig_height = fig.get_size_inches()
-    fig.gca().text(
-        helper.FIG_WPAD,
-        0.95,
-        "b",
-        transform=fig.dpi_scale_trans,
-        fontsize=8,
-        fontweight="bold",
-    )
 
     # Add learning stage colorbar
     normalize = mcolors.Normalize(vmin=0, vmax=1)
