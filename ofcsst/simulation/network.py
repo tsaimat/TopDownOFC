@@ -9,7 +9,8 @@ Three families of component live here, composed into full models by `agents`:
   `GainModulatorV` implements the apical/top-down gain driven by value-prediction
   credit; `GainModulatorOFCSST` adds the lOFC -> SST pathway that suppresses that
   gain when the context prediction error exceeds threshold; `GainModulatorRW` is
-  a Rescorla-Wagner control.
+  a Rescorla-Wagner control. The `BackpropInput` controls (`BackpropGain`,
+  `BottomUpLayer`) instead learn the input stage from one actor's backpropagated loss.
 - Actors (`PGActor`, `QActor` and variants) turn a representation into a lick /
   no-lick decision and learn from the delivered reward. The `Pure*` variants
   instead obtain their gain by backpropagating the actor's own loss, as a control
@@ -352,6 +353,63 @@ class GainModulatorOFCSST(GainModulatorV):
 
     def set_ap(self, ap: torch.Tensor):
         self._apical_inputs = ap
+
+
+class BackpropInput(ABC):
+    """Plastic input stage of a control model, trained by an actor's backpropagated loss.
+
+    The agent decides which actor's loss reaches it; `update` then applies the
+    accumulated gradient and clamps the learnt weights to [w_min, w_max].
+    """
+
+    def __init__(
+        self, weight: torch.Tensor, learning_rate: float, w_min: float, w_max: float
+    ):
+        self._weight = weight.requires_grad_(True)
+        self._optimizer = torch.optim.SGD(params=[self._weight], lr=learning_rate)
+        self._w_min = w_min
+        self._w_max = w_max
+
+    @abstractmethod
+    def forward(self, basal_input: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError("Abstract method")
+
+    def update(self) -> None:
+        self._optimizer.step()
+        self._optimizer.zero_grad()
+        torch.clamp(
+            self._weight.data, min=self._w_min, max=self._w_max, out=self._weight.data
+        )
+
+
+class BackpropGain(BackpropInput):
+    """Multiplicative gains as in `PurePGActor`, held outside the actor so both convex actors read them."""
+
+    def __init__(self, input_size: int, learning_rate: float):
+        super().__init__(
+            weight=torch.ones((input_size,)),
+            learning_rate=learning_rate,
+            w_min=0.0,
+            w_max=constants.MAX_GAIN,
+        )
+
+    def forward(self, basal_input: torch.Tensor) -> torch.Tensor:
+        return basal_input * self._weight
+
+
+class BottomUpLayer(BackpropInput):
+    """Plastic bottom-up synapses as the first layer of `PGActorDeep`, starting from the identity."""
+
+    def __init__(self, input_size: int, learning_rate: float):
+        super().__init__(
+            weight=torch.eye(input_size),
+            learning_rate=learning_rate,
+            w_min=-constants.POLICY_WEIGHT,
+            w_max=constants.POLICY_WEIGHT,
+        )
+
+    def forward(self, basal_input: torch.Tensor) -> torch.Tensor:
+        return torch.relu(torch.matmul(self._weight, basal_input))
 
 
 class Actor(ABC):

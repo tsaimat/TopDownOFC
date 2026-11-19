@@ -36,9 +36,9 @@ def scan():
 def plot(save: bool = True) -> None:
     sts = (
         ids.SIM_PG_NO_GAIN,
-        ids.SIM_PG_RW,
-        ids.SIM_PURE_PG_GAIN,
         ids.SIM_PG_NO_GAIN_DEEP,
+        ids.SIM_PURE_PG_GAIN,
+        ids.SIM_PG_RW,
         ids.SIM_PG_GAIN,
     )
     lbs = [

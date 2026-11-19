@@ -148,6 +148,48 @@ def scan():
     )
 
 
+def scan_control_algorithms():
+    # Bottom-up plasticity based of Q learning without gain
+    simulation.scan.find_best_params(
+        simulation_type=ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
+        task_id=constants.TASK_ID,
+        switch_task=True,
+        scan_type=ids.ST_FINAL,
+    )
+
+    # Bottom-up plasticity based of policy gradient without gain
+    simulation.scan.find_best_params(
+        simulation_type=ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
+        task_id=constants.TASK_ID,
+        switch_task=True,
+        scan_type=ids.ST_FINAL,
+    )
+
+    # Rescorla-Wagner gain
+    simulation.scan.find_best_params(
+        simulation_type=ids.SIM_CONVEX_RW,
+        task_id=constants.TASK_ID,
+        switch_task=True,
+        scan_type=ids.ST_FINAL,
+    )
+
+    # Backpropagated policy gradient gain
+    simulation.scan.find_best_params(
+        simulation_type=ids.SIM_CONVEX_PURE_PG_GAIN,
+        task_id=constants.TASK_ID,
+        switch_task=True,
+        scan_type=ids.ST_FINAL,
+    )
+
+    # Backpropagated Q loss gain
+    simulation.scan.find_best_params(
+        simulation_type=ids.SIM_CONVEX_PURE_Q_GAIN,
+        task_id=constants.TASK_ID,
+        switch_task=True,
+        scan_type=ids.ST_FINAL,
+    )
+
+
 def run():
     print("Running simulations for Figure S8")
     simulate_condition(simulation_type=OFC_SIM)

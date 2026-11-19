@@ -128,6 +128,11 @@ class ConvexAgent(Agent):
     def get_action(self, basal_input: torch.Tensor) -> bool:
         goal_suggestion = self._goal_actor.simulate(representation=basal_input)
         habit_suggestion = self._habit_actor.simulate(representation=basal_input)
+        return self.arbitrate(
+            goal_suggestion=goal_suggestion, habit_suggestion=habit_suggestion
+        )
+
+    def arbitrate(self, goal_suggestion: bool, habit_suggestion: bool) -> bool:
         if goal_suggestion == habit_suggestion:
             action = goal_suggestion
         else:
@@ -171,6 +176,45 @@ class ConvexAgent(Agent):
         else:
             raise NotImplementedError
         return logger
+
+
+class ConvexAgentBackprop(ConvexAgent):
+    """Control model: a convex agent whose input stage learns from one actor's loss.
+
+    Both actors read the same representation, but only the goal actor (if
+    `backprop_q`) or the habit actor receives it with its gradient attached; the
+    other reads a detached copy, so its loss cannot reach the input stage.
+    """
+    def __init__(
+        self,
+        goal_actor: network.QActor,
+        habit_actor: network.PGActor,
+        input_layer: network.BackpropInput,
+        backprop_q: bool,
+    ):
+        super().__init__(goal_actor=goal_actor, habit_actor=habit_actor)
+        self._input_layer = input_layer
+        self._backprop_q = backprop_q
+
+    def get_representation(self, basal_input: torch.Tensor) -> torch.Tensor:
+        return self._input_layer.forward(basal_input=basal_input)
+
+    def get_action(self, basal_input: torch.Tensor) -> bool:
+        representation = self.get_representation(basal_input=basal_input)
+        detached = representation.detach()
+        goal_suggestion = self._goal_actor.simulate(
+            representation=representation if self._backprop_q else detached
+        )
+        habit_suggestion = self._habit_actor.simulate(
+            representation=detached if self._backprop_q else representation
+        )
+        return self.arbitrate(
+            goal_suggestion=goal_suggestion, habit_suggestion=habit_suggestion
+        )
+
+    def update(self, reward: torch.Tensor):
+        super().update(reward=reward)
+        self._input_layer.update()
 
 
 class ConvexAgentGain(ConvexAgent):

@@ -182,7 +182,15 @@ def scan_params(
 ) -> None:
     if switch_task:
         tables = [databases.SCAN_TABLE]
-        if simulation_type in [ids.SIM_CONVEX_GAIN, ids.SIM_PG_NO_GAIN]:
+        if simulation_type in [
+            ids.SIM_CONVEX_GAIN,
+            ids.SIM_PG_NO_GAIN,
+            ids.SIM_CONVEX_RW,
+            ids.SIM_CONVEX_PURE_PG_GAIN,
+            ids.SIM_CONVEX_PURE_Q_GAIN,
+            ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
+            ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
+        ]:
             n_trials = 3 * constants.NR_TRIALS
             trial_nrs = (constants.NR_TRIALS, 2 * constants.NR_TRIALS)
         else:
