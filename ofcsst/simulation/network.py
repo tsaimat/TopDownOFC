@@ -253,9 +253,7 @@ class GainModulatorRW(GainModulator):
         )
 
     def simulate(self, representation: torch.Tensor):
-        self._prediction = self._apical_inputs * torch.heaviside(
-            representation, torch.tensor([0.0])
-        )
+        self._prediction = self._apical_inputs * representation
         self._alpha = representation
 
     def update(self, reward: torch.Tensor):
