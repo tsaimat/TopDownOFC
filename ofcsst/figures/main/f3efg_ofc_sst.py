@@ -472,6 +472,7 @@ class FigureConfig:
     labels: list[str] | None = None
     positions: list[list[float]] = field(default_factory=lambda: [[2.0, 1.0]])
     plot_seed_traces: bool = True
+    scale_violins_by_expert_fraction: bool = False
     trace_seed_loop: bool = False
     reversal_scatter_threshold: float | None = None
     reversal_scatter_sim_types: set[Any] | None = None
@@ -536,7 +537,10 @@ def plot_expertise_violin(
     ax: plt.Axes,
     xp_t: np.ndarray,
     pos: float,
+    width_scale: float = 1.0,
 ) -> None:
+    """Violin and jittered points of expert times. `width_scale` shrinks both, e.g.
+    to the fraction of seeds that reached expertise."""
     n = len(xp_t)
     if n == 0:
         return
@@ -544,7 +548,7 @@ def plot_expertise_violin(
     parts = ax.violinplot(
         [xp_t],
         positions=[pos],
-        widths=0.55,
+        widths=0.55 * width_scale,
         vert=False,
         showmeans=False,
         showmedians=True,
@@ -561,7 +565,7 @@ def plot_expertise_violin(
     if n <= 1:
         ys = np.array([pos])
     else:
-        ys = np.linspace(pos - 0.2, pos + 0.2, n)
+        ys = np.linspace(pos - 0.2 * width_scale, pos + 0.2 * width_scale, n)
     ax.scatter(xp_t, ys, **helper.BP_SCATTER)
 
 
@@ -698,10 +702,14 @@ def plot_expert_time(
 
             t1_times = t1_xp_t[~np.isnan(t1_xp_t[:, i]), i]
             t2_times = t2_xp_t[~np.isnan(t2_xp_t[:, i]), i]
+            t1_scale, t2_scale = 1.0, 1.0
+            if fig_config.scale_violins_by_expert_fraction:
+                t1_scale = len(t1_times) / t1_xp_t.shape[0]
+                t2_scale = len(t2_times) / t2_xp_t.shape[0]
 
-            plot_expertise_violin(axs[1, 0], t1_times, pos)
+            plot_expertise_violin(axs[1, 0], t1_times, pos, width_scale=t1_scale)
             if len(t2_times) != 0:
-                plot_expertise_violin(axs[1, 1], t2_times, pos)
+                plot_expertise_violin(axs[1, 1], t2_times, pos, width_scale=t2_scale)
 
         for ax_idx in range(2):
             axs[0, ax_idx].plot(

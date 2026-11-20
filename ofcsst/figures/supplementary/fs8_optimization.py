@@ -201,6 +201,7 @@ def panel_d_control_algorithms(save: bool = True) -> None:
         labels=CONTROL_LABELS + ["R-Opt with lOFC"],
         positions=[[float(p + 1) for p in range(n)]],
         plot_seed_traces=False,
+        scale_violins_by_expert_fraction=True,
         box_y_limits=(0.5, n + 0.5),
         rule_switch_line=(0.0, line_top, 0.0, n + 0.5),
         # Below all traces, which stay above chance at the rule switch
