@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from ofcsst import simulation
 from ofcsst.utils import ids, keys, paths, constants
 from ofcsst.figures import helper
@@ -19,6 +21,35 @@ PLOT_DIR = paths.SUPPLEMENTARY_FIG_DIR / "figs8"
 DB_PATH = paths.SUPPLEMENTARY_SIMULATION_DIR / "fig_s8_optimization.db"
 COLORS = [(114 / 255.0, 146 / 255.0, 179 / 255.0), helper.COLOR_GAIN]
 
+# Control algorithms optimised for reversal learning (see scan_control_algorithms)
+CONTROL_SIMS = (
+    ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
+    ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
+    ids.SIM_CONVEX_PURE_PG_GAIN,
+    ids.SIM_CONVEX_PURE_Q_GAIN,
+    ids.SIM_CONVEX_RW,
+)
+CONTROL_LABELS = [
+    "Bottom-up plasticity (PG)",
+    "Bottom-up plasticity (Q)",
+    "Policy gradient gains",
+    "Q-learning gains",
+    "Rescorla-Wagner gains",
+]
+
+
+def _shade(color: tuple[float, float, float], factor: float = 0.6):
+    return tuple(factor * c for c in color)
+
+
+CONTROL_COLORS = [
+    helper.COLOR_BU_PLASTICITY,
+    _shade(helper.COLOR_BU_PLASTICITY),
+    helper.COLOR_BACKPROP_GAIN,
+    _shade(helper.COLOR_BACKPROP_GAIN),
+    helper.COLOR_RESCORLA_WAGNER,
+]
+
 
 def simulate_condition(simulation_type: ids.SimulationType):
     # Initialize variables
@@ -31,6 +62,14 @@ def simulate_condition(simulation_type: ids.SimulationType):
         scan_type = ids.ST_ALL
         non_stat = True
         seeds = list(range(2 * constants.NR_SIM_MICE, 3 * constants.NR_SIM_MICE))
+
+    elif simulation_type in CONTROL_SIMS:
+        scan_type = ids.ST_FINAL
+        non_stat = True
+        block = 3 + CONTROL_SIMS.index(simulation_type)  # Seed blocks 3 to 7
+        seeds = list(
+            range(block * constants.NR_SIM_MICE, (block + 1) * constants.NR_SIM_MICE)
+        )
 
     else:
         raise NotImplementedError(simulation_type)
@@ -73,9 +112,9 @@ def panel_b_cumulative_distribution(save: bool = True) -> None:
     )
 
 
-def panel_c_expert_time(save: bool = True) -> None:
+def _panel_c_config() -> FigureConfig:
     pw = 1.7 * helper.PANEL_WIDTH
-    fig_config = FigureConfig(
+    return FigureConfig(
         figure_key=keys.FIGURE_S8,
         panel="c",
         plot_name="c_expert_time",
@@ -132,6 +171,48 @@ def panel_c_expert_time(save: bool = True) -> None:
         top_right_hide_y_ticks=True,
         y_lims_fixed=(0.0, 100.0),
         box_y_limits=(0.5, 4.5),
+    )
+
+
+def panel_c_expert_time(save: bool = True) -> None:
+    plot_expert_time(save=save, fig_config=_panel_c_config())
+
+
+def panel_d_control_algorithms(save: bool = True) -> None:
+    """Mean performance traces and expert times of the control algorithms versus the
+    lOFC model, all optimised for reversal learning."""
+    sim_types = CONTROL_SIMS + (OFC_SIM,)
+    n = len(sim_types)
+    base = _panel_c_config()
+    height_ratios = (3.0, 1.5)
+    height_scale = 1.25  # Taller than panel c to fit one expertise row per algorithm
+    # The rule-switch line spans both rows, from 100% performance down to the bottom
+    # of the expertise row, in expertise-row data units (rows stacked without hspace)
+    line_top = 0.5 - n * height_ratios[0] / height_ratios[1]
+    fig_config = replace(
+        base,
+        panel="d",
+        plot_name="d_control_algorithms",
+        height_ratios=height_ratios,
+        height_scale=height_scale,
+        sim_types=sim_types,
+        db_paths=[DB_PATH],
+        colors=CONTROL_COLORS + [COLORS[0]],
+        labels=CONTROL_LABELS + ["R-Opt with lOFC"],
+        positions=[[float(p + 1) for p in range(n)]],
+        plot_seed_traces=False,
+        box_y_limits=(0.5, n + 0.5),
+        rule_switch_line=(0.0, line_top, 0.0, n + 0.5),
+        # Below all traces, which stay above chance at the rule switch
+        rule_switch_text=(base.rule_switch_text[0], 27),
+        # Keep panel c's absolute bottom margin despite the taller figure
+        supxlabel_kwargs=dict(
+            base.supxlabel_kwargs, y=base.supxlabel_kwargs["y"] / height_scale
+        ),
+        subplots_adjust_kwargs=dict(
+            base.subplots_adjust_kwargs,
+            bottom=base.subplots_adjust_kwargs["bottom"] / height_scale,
+        ),
     )
     plot_expert_time(save=save, fig_config=fig_config)
 
@@ -190,13 +271,20 @@ def scan_control_algorithms():
     )
 
 
+def run_control_algorithms():
+    for sim_type in CONTROL_SIMS:
+        simulate_condition(simulation_type=sim_type)
+
+
 def run():
     print("Running simulations for Figure S8")
     simulate_condition(simulation_type=OFC_SIM)
     simulate_condition(simulation_type=NO_OFC_SIM)
+    run_control_algorithms()
 
 
 def plot(save: bool = True):
     panel_a_performance_bars(save=save)
     panel_b_cumulative_distribution(save=save)
     panel_c_expert_time(save=save)
+    panel_d_control_algorithms(save=save)

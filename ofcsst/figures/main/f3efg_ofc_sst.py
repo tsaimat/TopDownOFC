@@ -471,6 +471,7 @@ class FigureConfig:
     )
     labels: list[str] | None = None
     positions: list[list[float]] = field(default_factory=lambda: [[2.0, 1.0]])
+    plot_seed_traces: bool = True
     trace_seed_loop: bool = False
     reversal_scatter_threshold: float | None = None
     reversal_scatter_sim_types: set[Any] | None = None
@@ -630,7 +631,9 @@ def plot_expert_time(
         positions = data["positions"]
         color_offset = data["color_offset"]
 
-        if fig_config.trace_seed_loop:
+        if not fig_config.plot_seed_traces:
+            pass
+        elif fig_config.trace_seed_loop:
             for seed in range(constants.NR_SIM_MICE):
                 for i, _sim_type in enumerate(fig_config.sim_types):
                     color = fig_config.colors[color_offset + i]
