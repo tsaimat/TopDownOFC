@@ -45,14 +45,12 @@ def get_param_keys(simulation_type: ids.SimulationType) -> list[keys.Key]:
     elif simulation_type in (
         ids.SIM_CONVEX_NO_GAIN,
         ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-        ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
     ):
         lr_keys: list[keys.Key] = [keys.LEARNING_RATE_PG, keys.LEARNING_RATE_Q]
     elif simulation_type in [
         ids.SIM_CONVEX_GAIN,
         ids.SIM_CONVEX_RW,  # LEARNING_RATE_V holds the RW rate, as for SIM_PG_RW
         ids.SIM_CONVEX_PURE_PG_GAIN,  # ... and the backpropagated gain's rate here
-        ids.SIM_CONVEX_PURE_Q_GAIN,
         ids.SIM_CONVEX_GAIN_REV_RESET,
         ids.SIM_CONVEX_FAKE_OFC,
         ids.SIM_CONVEX_OFC,

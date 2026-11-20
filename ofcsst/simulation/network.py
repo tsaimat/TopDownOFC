@@ -10,7 +10,8 @@ Three families of component live here, composed into full models by `agents`:
   credit; `GainModulatorOFCSST` adds the lOFC -> SST pathway that suppresses that
   gain when the context prediction error exceeds threshold; `GainModulatorRW` is
   a Rescorla-Wagner control. The `BackpropInput` controls (`BackpropGain`,
-  `BottomUpLayer`) instead learn the input stage from one actor's backpropagated loss.
+  `BottomUpLayer`) instead learn the input stage from the habit actor's backpropagated
+  loss.
 - Actors (`PGActor`, `QActor` and variants) turn a representation into a lick /
   no-lick decision and learn from the delivered reward. The `Pure*` variants
   instead obtain their gain by backpropagating the actor's own loss, as a control
@@ -354,10 +355,10 @@ class GainModulatorOFCSST(GainModulatorV):
 
 
 class BackpropInput(ABC):
-    """Plastic input stage of a control model, trained by an actor's backpropagated loss.
+    """Plastic input stage of a control model, trained by the habit actor's backpropagated loss.
 
-    The agent decides which actor's loss reaches it; `update` then applies the
-    accumulated gradient and clamps the learnt weights to [w_min, w_max].
+    `update` applies the accumulated gradient and clamps the learnt weights to
+    [w_min, w_max].
     """
 
     def __init__(

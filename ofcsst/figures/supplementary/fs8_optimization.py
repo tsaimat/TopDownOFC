@@ -24,29 +24,17 @@ COLORS = [(114 / 255.0, 146 / 255.0, 179 / 255.0), helper.COLOR_GAIN]
 # Control algorithms optimised for reversal learning (see scan_control_algorithms)
 CONTROL_SIMS = (
     ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-    ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
     ids.SIM_CONVEX_PURE_PG_GAIN,
-    ids.SIM_CONVEX_PURE_Q_GAIN,
     ids.SIM_CONVEX_RW,
 )
 CONTROL_LABELS = [
-    "Bottom-up plasticity (PG)",
-    "Bottom-up plasticity (Q)",
+    "Bottom-up plasticity",
     "Policy gradient gains",
-    "Q-learning gains",
     "Rescorla-Wagner gains",
 ]
-
-
-def _shade(color: tuple[float, float, float], factor: float = 0.6):
-    return tuple(factor * c for c in color)
-
-
 CONTROL_COLORS = [
     helper.COLOR_BU_PLASTICITY,
-    _shade(helper.COLOR_BU_PLASTICITY),
     helper.COLOR_BACKPROP_GAIN,
-    _shade(helper.COLOR_BACKPROP_GAIN),
     helper.COLOR_RESCORLA_WAGNER,
 ]
 
@@ -66,7 +54,7 @@ def simulate_condition(simulation_type: ids.SimulationType):
     elif simulation_type in CONTROL_SIMS:
         scan_type = ids.ST_FINAL
         non_stat = True
-        block = 3 + CONTROL_SIMS.index(simulation_type)  # Seed blocks 3 to 7
+        block = 3 + CONTROL_SIMS.index(simulation_type)  # Seed blocks 3 to 5
         seeds = list(
             range(block * constants.NR_SIM_MICE, (block + 1) * constants.NR_SIM_MICE)
         )
@@ -231,45 +219,13 @@ def scan():
 
 
 def scan_control_algorithms():
-    # Bottom-up plasticity based of Q learning without gain
-    simulation.scan.find_best_params(
-        simulation_type=ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
-        task_id=constants.TASK_ID,
-        switch_task=True,
-        scan_type=ids.ST_FINAL,
-    )
-
-    # Bottom-up plasticity based of policy gradient without gain
-    simulation.scan.find_best_params(
-        simulation_type=ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-        task_id=constants.TASK_ID,
-        switch_task=True,
-        scan_type=ids.ST_FINAL,
-    )
-
-    # Rescorla-Wagner gain
-    simulation.scan.find_best_params(
-        simulation_type=ids.SIM_CONVEX_RW,
-        task_id=constants.TASK_ID,
-        switch_task=True,
-        scan_type=ids.ST_FINAL,
-    )
-
-    # Backpropagated policy gradient gain
-    simulation.scan.find_best_params(
-        simulation_type=ids.SIM_CONVEX_PURE_PG_GAIN,
-        task_id=constants.TASK_ID,
-        switch_task=True,
-        scan_type=ids.ST_FINAL,
-    )
-
-    # Backpropagated Q loss gain
-    simulation.scan.find_best_params(
-        simulation_type=ids.SIM_CONVEX_PURE_Q_GAIN,
-        task_id=constants.TASK_ID,
-        switch_task=True,
-        scan_type=ids.ST_FINAL,
-    )
+    for sim_type in CONTROL_SIMS:
+        simulation.scan.find_best_params(
+            simulation_type=sim_type,
+            task_id=constants.TASK_ID,
+            switch_task=True,
+            scan_type=ids.ST_FINAL,
+        )
 
 
 def run_control_algorithms():

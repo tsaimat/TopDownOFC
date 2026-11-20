@@ -142,9 +142,7 @@ def init_simulation(
     elif simulation_type in [
         ids.SIM_CONVEX_RW,
         ids.SIM_CONVEX_PURE_PG_GAIN,
-        ids.SIM_CONVEX_PURE_Q_GAIN,
         ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-        ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
     ]:
         # Control models: convex action selection with an alternative to the top-down gain
         pg_lr = float(params[4])
@@ -163,28 +161,17 @@ def init_simulation(
                 habit_actor=pg_actor, goal_actor=q_actor, gain_modulator=gain_modulator
             )
         else:
-            backprop_q = simulation_type in [
-                ids.SIM_CONVEX_PURE_Q_GAIN,
-                ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
-            ]
-            if simulation_type in [
-                ids.SIM_CONVEX_PURE_PG_GAIN,
-                ids.SIM_CONVEX_PURE_Q_GAIN,
-            ]:
+            if simulation_type == ids.SIM_CONVEX_PURE_PG_GAIN:
                 input_layer = network.BackpropGain(
                     input_size=tot_nr_neurons, learning_rate=float(params[6])
                 )
             else:
-                # As in PGActorDeep, the bottom-up synapses learn at their actor's rate
+                # As in PGActorDeep, the bottom-up synapses learn at the policy's rate
                 input_layer = network.BottomUpLayer(
-                    input_size=tot_nr_neurons,
-                    learning_rate=q_lr if backprop_q else pg_lr,
+                    input_size=tot_nr_neurons, learning_rate=pg_lr
                 )
             agent = agents.ConvexAgentBackprop(
-                habit_actor=pg_actor,
-                goal_actor=q_actor,
-                input_layer=input_layer,
-                backprop_q=backprop_q,
+                habit_actor=pg_actor, goal_actor=q_actor, input_layer=input_layer
             )
 
     elif simulation_type in [

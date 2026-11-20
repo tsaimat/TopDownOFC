@@ -187,9 +187,7 @@ def scan_params(
             ids.SIM_PG_NO_GAIN,
             ids.SIM_CONVEX_RW,
             ids.SIM_CONVEX_PURE_PG_GAIN,
-            ids.SIM_CONVEX_PURE_Q_GAIN,
             ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-            ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
         ]:
             n_trials = 3 * constants.NR_TRIALS
             trial_nrs = (constants.NR_TRIALS, 2 * constants.NR_TRIALS)

@@ -28,7 +28,6 @@ def job_to_sim_params(simulation_type: ids.SimulationType, params: List[str]) ->
     elif simulation_type in (
         ids.SIM_CONVEX_NO_GAIN,
         ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
-        ids.SIM_CONVEX_NO_GAIN_DEEP_Q,
     ):
         noise_std = float(params[0])
         signal_amplitude = float(params[1])
@@ -83,7 +82,6 @@ def job_to_sim_params(simulation_type: ids.SimulationType, params: List[str]) ->
         ids.SIM_CONVEX_FAKE_OFC,
         ids.SIM_CONVEX_RW,
         ids.SIM_CONVEX_PURE_PG_GAIN,
-        ids.SIM_CONVEX_PURE_Q_GAIN,
     ):
         noise_std = float(params[0])
         signal_amplitude = float(params[1])

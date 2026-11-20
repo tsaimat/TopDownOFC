@@ -12,11 +12,9 @@ SimulationType = Literal[
     "soft_q_gain",
     "convex_no_gain",
     "convex_no_gain_deep_pg",
-    "convex_no_gain_deep_q",
     "convex_gain",
     "convex_rw",
     "convex_pure_pg_gain",
-    "convex_pure_q_gain",
     "convex_gain_reversal_reset",
     "convex_actor_fake_ofc",
     "convex_ofc",
@@ -44,10 +42,8 @@ SIM_PURE_SQ_GAIN: SimulationType = (
 SIM_CONVEX_NO_GAIN: SimulationType = "convex_no_gain"
 SIM_CONVEX_GAIN: SimulationType = "convex_gain"
 SIM_CONVEX_NO_GAIN_DEEP_PG: SimulationType = "convex_no_gain_deep_pg"
-SIM_CONVEX_NO_GAIN_DEEP_Q: SimulationType = "convex_no_gain_deep_q"
 SIM_CONVEX_RW: SimulationType = "convex_rw"
 SIM_CONVEX_PURE_PG_GAIN: SimulationType = "convex_pure_pg_gain"
-SIM_CONVEX_PURE_Q_GAIN: SimulationType = "convex_pure_q_gain"
 SIM_CONVEX_GAIN_REV_RESET: SimulationType = "convex_gain_reversal_reset"
 SIM_CONVEX_FAKE_OFC: SimulationType = "convex_actor_fake_ofc"
 SIM_CONVEX_OFC: SimulationType = "convex_ofc"
