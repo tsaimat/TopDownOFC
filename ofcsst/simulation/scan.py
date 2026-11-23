@@ -281,6 +281,8 @@ def get_scan_params_env(scan_type: ids.ScanType = ids.ST_FINAL) -> tuple:
         nr_distract = NUMBER_DISTRACTORS
     elif scan_type == ids.ST_NO_DISTRACTOR:
         nr_distract = [0]
+    elif scan_type in ids.REDUCED_DISTRACTOR_SCANS:
+        nr_distract = [constants.NUMBER_DISTRACTOR_REDUCED]
     else:
         nr_distract = [constants.NUMBER_DISTRACTOR]
     return noise_stds, signal_amplitudes, nr_distract, nr_signals
@@ -434,6 +436,7 @@ def write_scan_jobs_default(
                         ids.ST_VARY_DISTRACTOR_1D,
                         ids.ST_VARY_DISTRACTION_2D,
                         ids.ST_FINAL,
+                        ids.ST_FINAL_64,
                         ids.ST_NO_DISTRACTOR,
                     ]:
                         write_lr_jobs(
@@ -453,19 +456,21 @@ def write_scan_jobs_default(
     conn.close()
 
 
-def write_scan_jobs_ofc_all(f, task_id: ids.TaskID, id_lr: int):
+def write_scan_jobs_ofc_all(
+    f, task_id: ids.TaskID, id_lr: int, scan_type: ids.ScanType
+):
     print(
-        f"Scanning {ids.ST_ALL} {ids.SIM_CONVEX_OFC} on {paths.SWITCH_SUBDIR} {task_id} round {id_lr}"
+        f"Scanning {scan_type} {ids.SIM_CONVEX_OFC} on {paths.SWITCH_SUBDIR} {task_id} round {id_lr}"
     )
 
     # Get other params
     noise_stds, signal_amplitudes, nr_noises, nr_signals = get_scan_params_env(
-        scan_type=ids.ST_FINAL
+        scan_type=scan_type
     )
 
     # Init database
     db_path = get_db_path(
-        scan_type=ids.ST_ALL,
+        scan_type=scan_type,
         simulation_type=ids.SIM_CONVEX_OFC,
         task_id=task_id,
         non_stationary=True,
@@ -491,8 +496,9 @@ def write_scan_jobs_ofc_all(f, task_id: ids.TaskID, id_lr: int):
         keys.LEARNING_RATE_V,
     ]
     if id_lr == 0:
+        # ST_ALL starts from the ST_TD optimum and ST_ALL_64 from the ST_ALL optimum
         scan_db_path = get_db_path(
-            scan_type=ids.ST_TD,
+            scan_type=ids.ST_TD if scan_type == ids.ST_ALL else ids.ST_ALL,
             simulation_type=ids.SIM_CONVEX_OFC,
             task_id=task_id,
             non_stationary=True,
@@ -662,8 +668,10 @@ def write_scan_jobs(
     with open(job_file, "w") as f:
         if scan_type == ids.ST_TD:
             write_scan_jobs_td(f=f, task_id=task_id, id_lr=id_lr)
-        elif scan_type == ids.ST_ALL:
-            write_scan_jobs_ofc_all(f=f, task_id=task_id, id_lr=id_lr)
+        elif scan_type in (ids.ST_ALL, ids.ST_ALL_64):
+            write_scan_jobs_ofc_all(
+                f=f, task_id=task_id, id_lr=id_lr, scan_type=scan_type
+            )
         else:
             write_scan_jobs_default(
                 f=f,
@@ -716,7 +724,13 @@ def update_best_params(
     sql.drop_table(conn=conn, table_name=best_table, verbose=False)
     sql.make_table(conn=conn, table_name=best_table, col_names=best_cols)
 
-    if scan_type in [ids.ST_FINAL, ids.ST_ALL, ids.ST_TD, ids.ST_NO_DISTRACTOR]:
+    if scan_type in [
+        ids.ST_FINAL,
+        ids.ST_ALL,
+        ids.ST_TD,
+        ids.ST_NO_DISTRACTOR,
+        *ids.REDUCED_DISTRACTOR_SCANS,
+    ]:
         n_success = sql.count_rows(
             cur=cur,
             table=scan_table,

@@ -6,6 +6,7 @@ REWARD = 1.0  # Reward value in case of Hit
 PUNISHMENT = -1.0  # Reward value in case of FA
 NUMBER_SIGNAL = 2  # Standard number of signal neurons
 NUMBER_DISTRACTOR = 128  # Standard number of distractor neurons
+NUMBER_DISTRACTOR_REDUCED = 64  # Number of distractor neurons of the reversal scans ending in _64
 NR_TRIALS: int = 600  # Number of trials simulated for each rule
 NR_SEEDS = 64  # Number of seeds for hyperparameter scans, computational benchmarks and replicating neuronal variability
 NR_SIM_MICE = 10  # Number of seeds to replicate mouse number variability

@@ -83,6 +83,8 @@ ScanType = Literal[
     "convex_final",
     "vary_all",
     "vary_top_down",
+    "final_conditions_64",
+    "vary_all_64",
 ]
 ST_VARY_DISTRACTION_2D: ScanType = "vary_distraction_2d"
 ST_VARY_DISTRACTOR_1D: ScanType = "vary_distraction_1d"
@@ -90,6 +92,10 @@ ST_FINAL: ScanType = "final_conditions"
 ST_NO_DISTRACTOR: ScanType = "no_distractor"
 ST_TD: ScanType = "vary_top_down"
 ST_ALL: ScanType = "vary_all"
+# The reversal scans ST_FINAL and ST_ALL with constants.NUMBER_DISTRACTOR_REDUCED distractors
+ST_FINAL_64: ScanType = "final_conditions_64"
+ST_ALL_64: ScanType = "vary_all_64"
+REDUCED_DISTRACTOR_SCANS: list[ScanType] = [ST_FINAL_64, ST_ALL_64]
 
 # Identifier for the optimizer
 OptimizerType = Literal["sgd", "adam", "adagrad", "rmsprop", "adamax", "adadelta"]

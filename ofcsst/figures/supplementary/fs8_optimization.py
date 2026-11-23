@@ -1,4 +1,5 @@
 from dataclasses import replace
+from pathlib import Path
 
 from ofcsst import simulation
 from ofcsst.utils import ids, keys, paths, constants
@@ -19,9 +20,12 @@ from ofcsst.figures.main.f3efg_ofc_sst import COLOR_NO_OFC, COLOR_WT, SAVE_PATH
 TASK_ID = ids.BINARY_2VN
 PLOT_DIR = paths.SUPPLEMENTARY_FIG_DIR / "figs8"
 DB_PATH = paths.SUPPLEMENTARY_SIMULATION_DIR / "fig_s8_optimization.db"
+# Panel e: simulations with constants.NUMBER_DISTRACTOR_REDUCED distractors
+DB_PATH_64 = paths.SUPPLEMENTARY_SIMULATION_DIR / "fig_s8_optimization_64.db"
 COLORS = [(114 / 255.0, 146 / 255.0, 179 / 255.0), helper.COLOR_GAIN]
 
-# Control algorithms optimised for reversal learning (see scan_control_algorithms)
+# Control algorithms optimised for reversal learning (see scan_control_algorithms and
+# scan_64_distractors)
 CONTROL_SIMS = (
     ids.SIM_CONVEX_NO_GAIN_DEEP_PG,
     ids.SIM_CONVEX_PURE_PG_GAIN,
@@ -39,20 +43,27 @@ CONTROL_COLORS = [
 ]
 
 
-def simulate_condition(simulation_type: ids.SimulationType):
+def simulate_condition(
+    simulation_type: ids.SimulationType, reduced_distractors: bool = False
+):
+    """Simulate a model with its optimised parameters.
+
+    :param reduced_distractors: take the parameters from the reversal scans with
+        constants.NUMBER_DISTRACTOR_REDUCED distractors and save to DB_PATH_64.
+    """
     # Initialize variables
-    if simulation_type == NO_OFC_SIM:
+    if simulation_type == NO_OFC_SIM and not reduced_distractors:
         scan_type = ids.ST_FINAL
         non_stat = False
         seeds = list(range(constants.NR_SIM_MICE, 2 * constants.NR_SIM_MICE))
 
     elif simulation_type == OFC_SIM:
-        scan_type = ids.ST_ALL
+        scan_type = ids.ST_ALL_64 if reduced_distractors else ids.ST_ALL
         non_stat = True
         seeds = list(range(2 * constants.NR_SIM_MICE, 3 * constants.NR_SIM_MICE))
 
     elif simulation_type in CONTROL_SIMS:
-        scan_type = ids.ST_FINAL
+        scan_type = ids.ST_FINAL_64 if reduced_distractors else ids.ST_FINAL
         non_stat = True
         block = 3 + CONTROL_SIMS.index(simulation_type)  # Seed blocks 3 to 5
         seeds = list(
@@ -70,7 +81,7 @@ def simulate_condition(simulation_type: ids.SimulationType):
         sim_type=simulation_type,
         scan_path=scan_db_path,
         seeds=seeds,
-        save_db_path=DB_PATH,
+        save_db_path=DB_PATH_64 if reduced_distractors else DB_PATH,
     )
 
 
@@ -166,7 +177,9 @@ def panel_c_expert_time(save: bool = True) -> None:
     plot_expert_time(save=save, fig_config=_panel_c_config())
 
 
-def panel_d_control_algorithms(save: bool = True) -> None:
+def _plot_control_algorithms(
+    save: bool, panel: str, plot_name: str, db_path: Path
+) -> None:
     """Mean performance traces and expert times of the control algorithms versus the
     lOFC model, all optimised for reversal learning."""
     sim_types = CONTROL_SIMS + (OFC_SIM,)
@@ -179,12 +192,12 @@ def panel_d_control_algorithms(save: bool = True) -> None:
     line_top = 0.5 - n * height_ratios[0] / height_ratios[1]
     fig_config = replace(
         base,
-        panel="d",
-        plot_name="d_control_algorithms",
+        panel=panel,
+        plot_name=plot_name,
         height_ratios=height_ratios,
         height_scale=height_scale,
         sim_types=sim_types,
-        db_paths=[DB_PATH],
+        db_paths=[db_path],
         colors=CONTROL_COLORS + [COLORS[0]],
         labels=CONTROL_LABELS + ["R-Opt with lOFC"],
         positions=[[float(p + 1) for p in range(n)]],
@@ -204,6 +217,19 @@ def panel_d_control_algorithms(save: bool = True) -> None:
         ),
     )
     plot_expert_time(save=save, fig_config=fig_config)
+
+
+def panel_d_control_algorithms(save: bool = True) -> None:
+    _plot_control_algorithms(
+        save=save, panel="d", plot_name="d_control_algorithms", db_path=DB_PATH
+    )
+
+
+def panel_e_control_algorithms_64(save: bool = True) -> None:
+    """Panel d with constants.NUMBER_DISTRACTOR_REDUCED distractors."""
+    _plot_control_algorithms(
+        save=save, panel="e", plot_name="e_control_algorithms_64", db_path=DB_PATH_64
+    )
 
 
 def scan():
@@ -228,9 +254,31 @@ def scan_control_algorithms():
         )
 
 
+def scan_64_distractors():
+    """Reversal scans of the control algorithms and the lOFC model with
+    constants.NUMBER_DISTRACTOR_REDUCED distractors. The lOFC scan starts from the
+    lOFC optimum with constants.NUMBER_DISTRACTOR distractors (ids.ST_ALL)."""
+    for sim_type, scan_type in [(s, ids.ST_FINAL_64) for s in CONTROL_SIMS] + [
+        (OFC_SIM, ids.ST_ALL_64)
+    ]:
+        simulation.scan.find_best_params(
+            simulation_type=sim_type,
+            task_id=TASK_ID,
+            switch_task=True,
+            scan_type=scan_type,
+        )
+
+
 def run_control_algorithms():
     for sim_type in CONTROL_SIMS:
         simulate_condition(simulation_type=sim_type)
+
+
+def run_64_distractors():
+    """Panel e simulations: the control algorithms and the lOFC model with
+    constants.NUMBER_DISTRACTOR_REDUCED distractors."""
+    for sim_type in CONTROL_SIMS + (OFC_SIM,):
+        simulate_condition(simulation_type=sim_type, reduced_distractors=True)
 
 
 def run():
@@ -238,6 +286,7 @@ def run():
     simulate_condition(simulation_type=OFC_SIM)
     simulate_condition(simulation_type=NO_OFC_SIM)
     run_control_algorithms()
+    run_64_distractors()
 
 
 def plot(save: bool = True):
@@ -245,3 +294,4 @@ def plot(save: bool = True):
     panel_b_cumulative_distribution(save=save)
     panel_c_expert_time(save=save)
     panel_d_control_algorithms(save=save)
+    panel_e_control_algorithms_64(save=save)
